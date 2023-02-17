@@ -1,0 +1,5 @@
+{
+    "code-runner.executorMap": {
+        "cpp": "cmake --build build --target LearnOpenGL && $workspaceRoot/build/LearnOpenGL",
+    }
+}
