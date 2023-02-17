@@ -116,9 +116,10 @@ int main() {
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao); // now any changes we make to the vertex attrib pointer or vbo will be reflected in our VAO
 
-    // just 3 points in 3D space for my triangle. order shouldn't matter in theory, this order is different from the tutorial for example
+    // vertices for a square, we will define how it should be handled via the EBO
     float vertices[] = {
-        0.0, 0.5, 0.0,
+        -0.5, 0.5, 0.0,
+        0.5, 0.5, 0.0,
         -0.5, -0.5, 0.0,
         0.5, -0.5, 0.0
     };
@@ -128,9 +129,10 @@ int main() {
     glBindBuffer(GL_ARRAY_BUFFER, vbo); // so apparently GL_ARRAY_BUFFER means vertex buffer, i guess because vertices are stored as float arrays, like i did earlier? so now GL knows this is a vertex buffer object specifically. that being said, it means that our currently set VBO is the vbo i generated earlier. we can still manage other buffers, just as long as they are NOT GL_ARRAY_BUFFER, or vertex buffer objects, since we would then need to rebind it to that vbo instead.
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // fairly trivial, we are setting that previously bound VBO to now actually have our vertex data. the last bit, GL_STATIC_DRAW, supposedly means that the data gets set once, and is used many times. This is correct for our use case. there's also GL_DYNAMIC_DRAW, which both changes a lot and draws a lot, and GL_STREAM_DRAW, which is set once and used a few times, not too much. This specific value helps the GPU know how the data should be managed. If its STATIC or DYNAMIC i imagine GPUs give it more priority since its an important rendering component. of course, this is implementation specific.
 
-
+    // visualized this on desmos, but the idea is that we draw triangles using our coords. supposedly, opengl usually works with triangles. wonder how we render complex shapes like scribbles as triangles. oh well :p
     unsigned int indices[] = {
-        0, 1, 2
+        0, 1, 2,
+        1, 2, 3
     };
 
     // an EBO, or element buffer object, is an object that tells GL what indices to use from our vertex coordinates when drawing. We need to specify as many indices as the theoretical vertex coordinates of our object. In the case of my simple triangle its still 3, but lets say we wanted to make a shape like a square, and we did it with 2 triangles. We can define the four corners of the triangle, and then create an EBO to define 2 triangle vertices, so 6 indices, using the 4 vertices from prior.
@@ -160,7 +162,7 @@ int main() {
         glUseProgram(sp); // now we tell opengl we want to use that specific program and the associated shaders. this can be set inside the loop as well, we dont need to do that since we only have one shader program
         glBindVertexArray(vao); // bind to our VAO and restore the attrib pointer data and vbo associated with it
         //glDrawArrays(GL_TRIANGLES, 0, 3); // telling GL here we want to render a TRIANGLE, 0 is the starting index of our vertices, and 3 is saying how many vertices we want to draw. obviously we want to draw all 3 of our vertices
-        glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0); // we tell GL we are rendering from an EBO, 3 is our coordinates, GL_UNSIGNED_INT is the data type, and 0 is the start index of our ebo array.
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // we tell GL we are rendering from an EBO, 6 is our coordinates, GL_UNSIGNED_INT is the data type, and 0 is the start index of our ebo array.
 
         glfwSwapBuffers(window); // a buffer is a large 2d collection of sorts that contains color data for each pixel on the window. ive no clue why the swap though
         glfwPollEvents();
