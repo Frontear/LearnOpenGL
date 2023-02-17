@@ -114,7 +114,6 @@ int main() {
     // a VAO saves the state of a vertex with its attributes + binds it to the associated VBO. in our case, it will save the data we set in attrib pointer and enable attrib array, it will know that we are using our current VBO for those attribs, so that whenever we bind our vertex array to this VAO, we can just re-use these functions without needing to set them again.
     unsigned int vao;
     glGenVertexArrays(1, &vao);
-
     glBindVertexArray(vao); // now any changes we make to the vertex attrib pointer or vbo will be reflected in our VAO
 
     // just 3 points in 3D space for my triangle. order shouldn't matter in theory, this order is different from the tutorial for example
@@ -129,15 +128,27 @@ int main() {
     glBindBuffer(GL_ARRAY_BUFFER, vbo); // so apparently GL_ARRAY_BUFFER means vertex buffer, i guess because vertices are stored as float arrays, like i did earlier? so now GL knows this is a vertex buffer object specifically. that being said, it means that our currently set VBO is the vbo i generated earlier. we can still manage other buffers, just as long as they are NOT GL_ARRAY_BUFFER, or vertex buffer objects, since we would then need to rebind it to that vbo instead.
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // fairly trivial, we are setting that previously bound VBO to now actually have our vertex data. the last bit, GL_STATIC_DRAW, supposedly means that the data gets set once, and is used many times. This is correct for our use case. there's also GL_DYNAMIC_DRAW, which both changes a lot and draws a lot, and GL_STREAM_DRAW, which is set once and used a few times, not too much. This specific value helps the GPU know how the data should be managed. If its STATIC or DYNAMIC i imagine GPUs give it more priority since its an important rendering component. of course, this is implementation specific.
 
+
+    unsigned int indices[] = {
+        0, 1, 2
+    };
+
+    // an EBO, or element buffer object, is an object that tells GL what indices to use from our vertex coordinates when drawing. We need to specify as many indices as the theoretical vertex coordinates of our object. In the case of my simple triangle its still 3, but lets say we wanted to make a shape like a square, and we did it with 2 triangles. We can define the four corners of the triangle, and then create an EBO to define 2 triangle vertices, so 6 indices, using the 4 vertices from prior.
+    unsigned int ebo;
+    glGenBuffers(1, &ebo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo); // ELEMENT_ARRAY_BUFFER tells GL this is an EBO.
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
     // lots of cool stuff here, first parameter is trying to specify which vertex attribute we wanna modify. earlier we set our location = 0 in the vertex shader, which corresponds to the 0th vertex attribute. hence, here, we use 0
-    // the 3 tells GL that we have 3 coordinates to work with in our vertex. the tutorial notes that since we use a vec3 we send 3. I'm not sure if this implies the vec3 pos in the fragmnt shader, or the vertices array we had instead.
-    // GL_FLOAT is the type of our vertices, all floats
-    // GL_FALSE tells GL we dont want to normalize our data. this is interesting because i was led to believe that fragment shaders should calculate normalization, whereas here it seems GL does too? unless this is a separate normalization that doesn't affect the shaders, but that doesn't make sense since this tells GL how to process the vertex data and communicate it to our shaders.. idk
-    // 3 * sizeof(float) looks spooky, but basically it tells GL the size of one coordinate in the array block. our coordinates are 3, xyz, so we tell GL that each coordinate is 3 floats long, so it knows where the coordinates start and end.
+    // the 3 tells GL that we have 3 coordinates to work with in our vertex. the tutorial notes that since we use a vec3 we send 3. I'm not sure if this implies the vec3 pos in the vertex shader shader, or the vertices array we had instead. I can confirm now it is NOT the 3 from either the vertex or the indices, but rather from the vec3 position we use in our vertex shader.
+    // GL_FLOAT is the type of our vertices, all floats. Any vec type is a float, so vec3, vec4 etc
+    // GL_FALSE tells GL we dont want to normalize our data. this is interesting because i was led to believe that vertex shaders should calculate normalization, whereas here it seems GL does too? unless this is a separate normalization that doesn't affect the shaders, but that doesn't make sense since this tells GL how to process the vertex data and communicate it to our shaders.. idk
+    // 3 * sizeof(float) looks spooky, but basically it tells GL the size of one coordinate in the array block. our coordinates are 3, xyz, so we tell GL that each coordinate is 3 floats long, so it knows where the coordinates start and end. This is in respect to the way our VBO/vertices are written.
     // 0 here tells GL to start looking for coordinates from the 0th position, or the start of the array.
     // this function takes its data from the managed VBO, the one bound to GL_ARRAY_BUFFER. For our vertex shaders, the 0th attribute is now bound to that VBO. we could rebind the VBO and set it to 1 instead or something to have multiple vertex attributes, and obviously would need handling in the vertex shaders accordingly.
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
     glEnableVertexAttribArray(0); // enables the given vertex attribute, since our VBO is bound to attribute 0, and we set it earlier, this can be set here
+    glBindVertexArray(0); // removes the currently active VAO, should be fine since we rebind it in our render loop
 
     // simple render loop
     while (!glfwWindowShouldClose(window)) {
@@ -148,7 +159,8 @@ int main() {
 
         glUseProgram(sp); // now we tell opengl we want to use that specific program and the associated shaders. this can be set inside the loop as well, we dont need to do that since we only have one shader program
         glBindVertexArray(vao); // bind to our VAO and restore the attrib pointer data and vbo associated with it
-        glDrawArrays(GL_TRIANGLES, 0, 3); // telling GL here we want to render a TRIANGLE, 0 is the starting index of our vertices, and 3 is saying how many vertices we want to draw. obviously we want to draw all 3 of our vertices
+        //glDrawArrays(GL_TRIANGLES, 0, 3); // telling GL here we want to render a TRIANGLE, 0 is the starting index of our vertices, and 3 is saying how many vertices we want to draw. obviously we want to draw all 3 of our vertices
+        glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0); // we tell GL we are rendering from an EBO, 3 is our coordinates, GL_UNSIGNED_INT is the data type, and 0 is the start index of our ebo array.
 
         glfwSwapBuffers(window); // a buffer is a large 2d collection of sorts that contains color data for each pixel on the window. ive no clue why the swap though
         glfwPollEvents();
