@@ -43,10 +43,10 @@ int main() {
     // in this vertex shader the gl_Position is expected to be normalized, meaning ranges are shrunk to [-1.0, 1.0]. since our vertex is already normalized we dont process here, but normally you'd either have to check, or just process.
     const char* vshader = R"(
         #version 330 core
-        layout (location = 0) in vec3 pos;
+        layout (location = 0) in vec4 pos;
 
         void main() {
-            gl_Position = vec4(pos.x, pos.y, pos.z, 1.0);
+            gl_Position = vec4(pos.x, pos.y, pos.z, pos.w);
         }
     )";
     unsigned int vso;
@@ -118,10 +118,10 @@ int main() {
 
     // vertices for a square, we will define how it should be handled via the EBO
     float vertices[] = {
-        -0.5, 0.5, 0.0,
-        0.5, 0.5, 0.0,
-        -0.5, -0.5, 0.0,
-        0.5, -0.5, 0.0
+        -0.5, 0.5, 0.0, 1.0,
+        0.5, 0.5, 0.0, 1.0,
+        -0.5, -0.5, 0.0, 1.0,
+        0.5, -0.5, 0.0, 1.0
     };
 
     unsigned int vbo; // a vbo is an object that just contains vertex data, so the coords above, can then be saved to the vbo and saved into the GPU
@@ -148,7 +148,7 @@ int main() {
     // 3 * sizeof(float) looks spooky, but basically it tells GL the size of one coordinate in the array block. our coordinates are 3, xyz, so we tell GL that each coordinate is 3 floats long, so it knows where the coordinates start and end. This is in respect to the way our VBO/vertices are written.
     // 0 here tells GL to start looking for coordinates from the 0th position, or the start of the array.
     // this function takes its data from the managed VBO, the one bound to GL_ARRAY_BUFFER. For our vertex shaders, the 0th attribute is now bound to that VBO. we could rebind the VBO and set it to 1 instead or something to have multiple vertex attributes, and obviously would need handling in the vertex shaders accordingly.
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
     glEnableVertexAttribArray(0); // enables the given vertex attribute, since our VBO is bound to attribute 0, and we set it earlier, this can be set here
     glBindVertexArray(0); // removes the currently active VAO, should be fine since we rebind it in our render loop
 
