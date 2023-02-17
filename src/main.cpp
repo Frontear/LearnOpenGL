@@ -118,10 +118,10 @@ int main() {
 
     // vertices for a square, we will define how it should be handled via the EBO
     float vertices[] = {
-        -0.5, 0.5, 0.0, 1.0,
-        0.5, 0.5, 0.0, 1.0,
-        -0.5, -0.5, 0.0, 1.0,
-        0.5, -0.5, 0.0, 1.0
+        -0.5,   0.5,     0.0,    1.0,
+        0.5,    0.5,     0.0,    1.0,
+        -0.5,   -0.5,    0.0,    1.0,
+        0.5,    -0.5,    0.0,    1.0
     };
 
     unsigned int vbo; // a vbo is an object that just contains vertex data, so the coords above, can then be saved to the vbo and saved into the GPU
@@ -131,8 +131,8 @@ int main() {
 
     // visualized this on desmos, but the idea is that we draw triangles using our coords. supposedly, opengl usually works with triangles. wonder how we render complex shapes like scribbles as triangles. oh well :p
     unsigned int indices[] = {
-        0, 1, 2,
-        1, 2, 3
+        0,  1,   2,
+        1,  2,   3
     };
 
     // an EBO, or element buffer object, is an object that tells GL what indices to use from our vertex coordinates when drawing. We need to specify as many indices as the theoretical vertex coordinates of our object. In the case of my simple triangle its still 3, but lets say we wanted to make a shape like a square, and we did it with 2 triangles. We can define the four corners of the triangle, and then create an EBO to define 2 triangle vertices, so 6 indices, using the 4 vertices from prior.
