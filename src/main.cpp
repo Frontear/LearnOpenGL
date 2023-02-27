@@ -2,7 +2,6 @@
 #include <GL/glew.h> // must come before so it can setup the GL headers for GLFW
 #include <GLFW/glfw3.h>
 
-void resizeWindowCallback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 
 int main() {
@@ -33,9 +32,11 @@ int main() {
     }
 
     glViewport(0, 0, 800, 600); // first 2 params set the coordinates for the bottom left corner, last 2 params i imagine are for the top right
-    glfwSetFramebufferSizeCallback(window, resizeWindowCallback); // must be done since viewport depends on height/width, so if it is resized, the viewport must be set again accordingly
+    glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int width, int height) {
+        glViewport(0, 0, width, height);
+    }); // must be done since viewport depends on height/width, so if it is resized, the viewport must be set again accordingly
 
-    // version 330 core corrseponds to our GL version. we set to 3.3 earlier. the core part mentions we are using core profile
+    // version 330 core corresponds to our GL version. we set to 3.3 earlier. the core part mentions we are using core profile
     // in means input vertex attributes. there's probably a few attributes here you can set, but right now we only wanted position.
     // vec4 is xyzw, but it doesnt mean 4D, nor does w mean anything weird like that. w actually means something called perspective division
     // setting gl_Position inside of the main function is what we take as the position data. That's the output/handling of the vertex data, otherwise the position would not be set.
@@ -112,16 +113,17 @@ int main() {
     glDeleteShader(fso);
 
     // a VAO saves the state of a vertex with its attributes + binds it to the associated VBO. in our case, it will save the data we set in attrib pointer and enable attrib array, it will know that we are using our current VBO for those attribs, so that whenever we bind our vertex array to this VAO, we can just re-use these functions without needing to set them again.
+    // a good way to think of a VAO is that it defines how GL should translate the data from a VBO into a vertex shader.
     unsigned int vao;
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao); // now any changes we make to the vertex attrib pointer or vbo will be reflected in our VAO
 
     // vertices for a square, we will define how it should be handled via the EBO
     float vertices[] = {
-        -0.5,   0.5,     0.0,    1.0,
-        0.5,    0.5,     0.0,    1.0,
-        -0.5,   -0.5,    0.0,    1.0,
-        0.5,    -0.5,    0.0,    1.0
+        -0.5,   0.5,    0.0,    1.0,
+         0.5,   0.5,    0.0,    1.0,
+        -0.5,  -0.5,    0.0,    1.0,
+         0.5,  -0.5,    0.0,    1.0
     };
 
     unsigned int vbo; // a vbo is an object that just contains vertex data, so the coords above, can then be saved to the vbo and saved into the GPU
@@ -129,7 +131,7 @@ int main() {
     glBindBuffer(GL_ARRAY_BUFFER, vbo); // so apparently GL_ARRAY_BUFFER means vertex buffer, i guess because vertices are stored as float arrays, like i did earlier? so now GL knows this is a vertex buffer object specifically. that being said, it means that our currently set VBO is the vbo i generated earlier. we can still manage other buffers, just as long as they are NOT GL_ARRAY_BUFFER, or vertex buffer objects, since we would then need to rebind it to that vbo instead.
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // fairly trivial, we are setting that previously bound VBO to now actually have our vertex data. the last bit, GL_STATIC_DRAW, supposedly means that the data gets set once, and is used many times. This is correct for our use case. there's also GL_DYNAMIC_DRAW, which both changes a lot and draws a lot, and GL_STREAM_DRAW, which is set once and used a few times, not too much. This specific value helps the GPU know how the data should be managed. If its STATIC or DYNAMIC i imagine GPUs give it more priority since its an important rendering component. of course, this is implementation specific.
 
-    // visualized this on desmos, but the idea is that we draw triangles using our coords. supposedly, opengl usually works with triangles. wonder how we render complex shapes like scribbles as triangles. oh well :p
+    // visualized this on desmos, but the idea is that we draw triangles using our coords. supposedly, opengl usually works best with triangles. wonder how we render complex shapes like scribbles as triangles. oh well :p
     unsigned int indices[] = {
         0,  1,   2,
         1,  2,   3
@@ -144,13 +146,16 @@ int main() {
     // lots of cool stuff here, first parameter is trying to specify which vertex attribute we wanna modify. earlier we set our location = 0 in the vertex shader, which corresponds to the 0th vertex attribute. hence, here, we use 0
     // the 3 tells GL that we have 3 coordinates to work with in our vertex. the tutorial notes that since we use a vec3 we send 3. I'm not sure if this implies the vec3 pos in the vertex shader shader, or the vertices array we had instead. I can confirm now it is NOT the 3 from either the vertex or the indices, but rather from the vec3 position we use in our vertex shader.
     // GL_FLOAT is the type of our vertices, all floats. Any vec type is a float, so vec3, vec4 etc
-    // GL_FALSE tells GL we dont want to normalize our data. this is interesting because i was led to believe that vertex shaders should calculate normalization, whereas here it seems GL does too? unless this is a separate normalization that doesn't affect the shaders, but that doesn't make sense since this tells GL how to process the vertex data and communicate it to our shaders.. idk
-    // 3 * sizeof(float) looks spooky, but basically it tells GL the size of one coordinate in the array block. our coordinates are 3, xyz, so we tell GL that each coordinate is 3 floats long, so it knows where the coordinates start and end. This is in respect to the way our VBO/vertices are written.
+    // GL_FALSE tells GL we dont want to normalize our data. this is interesting because i was led to believe that vertex shaders should calculate normalization, whereas here it seems GL does too? unless this is a separate normalization that doesn't affect the shaders, but that doesn't make sense since this tells GL how to process the vertex data and communicate it to our shaders.. idk. Tried to mess with this and i have NO idea what it does lol.
+    // 4 * sizeof(float) looks spooky, but basically it tells GL the size of one coordinate in the array block. our coordinates are 4, xyzw, so we tell GL that each coordinate is 4 floats long, so it knows where the coordinates start and end. This is in respect to the way our VBO/vertices are written.
     // 0 here tells GL to start looking for coordinates from the 0th position, or the start of the array.
-    // this function takes its data from the managed VBO, the one bound to GL_ARRAY_BUFFER. For our vertex shaders, the 0th attribute is now bound to that VBO. we could rebind the VBO and set it to 1 instead or something to have multiple vertex attributes, and obviously would need handling in the vertex shaders accordingly.
+    // this function takes its data from the managed VBO, the one bound to GL_ARRAY_BUFFER. For our vertex shaders, the 0th attribute is now bound to that VBO. we could rebind the VBO and set it to 1 instead or something to have multiple vertex attributes, and obviously would need handling in the vertex shaders accordingly. it is set PER VBO that is BOUND, so if youre trying to set another VBO, BIND IT FIRST, AND MAKE SURE TO UNBIND IF YOURE SETTING ANOTHER ONE
     glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
-    glEnableVertexAttribArray(0); // enables the given vertex attribute, since our VBO is bound to attribute 0, and we set it earlier, this can be set here
+    glEnableVertexAttribArray(0); // enables the given vertex attribute, since our VBO is bound to attribute 0, and we set it earlier, this can be set here, attribute here is the layout 0 thing
     glBindVertexArray(0); // removes the currently active VAO, should be fine since we rebind it in our render loop
+    // can unbind these two as well because the bindings are associated now via the VAO.
+    glBindBuffer(GL_VERTEX_ARRAY, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
     // simple render loop
     while (!glfwWindowShouldClose(window)) {
@@ -165,16 +170,12 @@ int main() {
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // we tell GL we are rendering from an EBO, 6 is our coordinates, GL_UNSIGNED_INT is the data type, and 0 is the start index of our ebo array.
 
         glfwSwapBuffers(window); // a buffer is a large 2d collection of sorts that contains color data for each pixel on the window. ive no clue why the swap though
-        glfwPollEvents();
+        glfwPollEvents(); // input events, mouse events, click events, drag events, resize events ETC ETC
     }
 
     glfwTerminate();
 
     return 0;
-}
-
-void resizeWindowCallback(GLFWwindow* window, int width, int height) {
-    glViewport(0, 0, width, height);
 }
 
 void processInput(GLFWwindow* window) {
