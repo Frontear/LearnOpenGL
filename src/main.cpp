@@ -69,10 +69,25 @@ int main() {
     // fragment shaders only have 1 output variable, the color, which is a vec4 of rgba. i wonder why we dont do out vec4 gl_Position in the vertex shader. I think its because gl_Position is already defined, whereas here we need to tell opengl we are giving an vec4 out, which opengl will always treat as a color.
     const char* fshader = R"(
         #version 330 core
+        layout(origin_upper_left) in vec4 gl_FragCoord;
         out vec4 color;
 
         void main() {
-            color = vec4(1.0, 0.5, 0.2, 1.0);
+            float pink_r = 255 / 255.0f;
+            float pink_g = 192 / 255.0f;
+            float pink_b = 203 / 255.0f;
+
+            float blue_r = 65 / 255.0f;
+            float blue_g = 105 / 255.0f;
+            float blue_b = 255 / 255.0f;
+
+            // lerping here to get gradient fill across shape
+            // 800 from window size
+            float r = pink_r - (pink_r - blue_r) * gl_FragCoord.x / 800.0f;
+            float g = pink_g - (pink_g - blue_g) * gl_FragCoord.x / 800.0f;
+            float b = pink_b - (pink_b - blue_b) * gl_FragCoord.x / 800.0f;
+
+            color = vec4(0.25 + r, g, b, 1.0);
         }
     )";
     unsigned int fso;
