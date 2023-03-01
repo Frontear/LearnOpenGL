@@ -44,10 +44,11 @@ int main() {
     // in this vertex shader the gl_Position is expected to be normalized, meaning ranges are shrunk to [-1.0, 1.0]. since our vertex is already normalized we dont process here, but normally you'd either have to check, or just process.
     const char* vshader = R"(
         #version 330 core
-        layout (location = 0) in vec4 pos;
+        layout (location = 0) in vec2 pos;
+        uniform vec2 mouse;
 
         void main() {
-            gl_Position = vec4(pos.x, pos.y, pos.z, pos.w);
+            gl_Position = vec4(pos.x + mouse.x, pos.y - mouse.y, 0.0, 1.0); // mouse movements here aren't perfectly 1:1, because this shader is run per vertex, so logically all vertex's are being affected by mouse.x, not just the top left like I expected at first
         }
     )";
     unsigned int vso;
@@ -135,10 +136,10 @@ int main() {
 
     // vertices for a square, we will define how it should be handled via the EBO
     float vertices[] = {
-        -0.5,   0.5,    0.0,    1.0,
-         0.5,   0.5,    0.0,    1.0,
-        -0.5,  -0.5,    0.0,    1.0,
-         0.5,  -0.5,    0.0,    1.0
+        -1.0,   1.0,
+         0.0,   1.0,
+        -1.0,   0.0,
+         0.0,   0.0,
     };
 
     unsigned int vbo; // a vbo is an object that just contains vertex data, so the coords above, can then be saved to the vbo and saved into the GPU
@@ -165,7 +166,7 @@ int main() {
     // 4 * sizeof(float) looks spooky, but basically it tells GL the size of one coordinate in the array block. our coordinates are 4, xyzw, so we tell GL that each coordinate is 4 floats long, so it knows where the coordinates start and end. This is in respect to the way our VBO/vertices are written.
     // 0 here tells GL to start looking for coordinates from the 0th position, or the start of the array.
     // this function takes its data from the managed VBO, the one bound to GL_ARRAY_BUFFER. For our vertex shaders, the 0th attribute is now bound to that VBO. we could rebind the VBO and set it to 1 instead or something to have multiple vertex attributes, and obviously would need handling in the vertex shaders accordingly. it is set PER VBO that is BOUND, so if youre trying to set another VBO, BIND IT FIRST, AND MAKE SURE TO UNBIND IF YOURE SETTING ANOTHER ONE
-    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
     glEnableVertexAttribArray(0); // enables the given vertex attribute, since our VBO is bound to attribute 0, and we set it earlier, this can be set here, attribute here is the layout 0 thing
     glBindVertexArray(0); // removes the currently active VAO, should be fine since we rebind it in our render loop
     // can unbind these two as well because the bindings are associated now via the VAO.
@@ -180,6 +181,23 @@ int main() {
         glClear(GL_COLOR_BUFFER_BIT); // clears the data in the color buffers, sets it to default values, which we are overwriting above by saying the new clear values are.. that color
 
         glUseProgram(sp); // now we tell opengl we want to use that specific program and the associated shaders. this can be set inside the loop as well, we dont need to do that since we only have one shader program
+
+        unsigned int mouse;
+        mouse = glGetUniformLocation(sp, "mouse");
+
+        // processing of coords
+        double pos[2];
+        int size[2];
+        glfwGetCursorPos(window, &pos[0], &pos[1]);
+        glfwGetWindowSize(window, &size[0], &size[1]);
+
+        float mousePos[] = {
+            // normalizing
+            pos[0] / size[0],
+            pos[1] / size[1]
+        };
+        glUniform2fv(mouse, 1, mousePos);
+
         glBindVertexArray(vao); // bind to our VAO and restore the attrib pointer data and vbo associated with it
         //glDrawArrays(GL_TRIANGLES, 0, 3); // telling GL here we want to render a TRIANGLE, 0 is the starting index of our vertices, and 3 is saying how many vertices we want to draw. obviously we want to draw all 3 of our vertices
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // we tell GL we are rendering from an EBO, 6 is our coordinates, GL_UNSIGNED_INT is the data type, and 0 is the start index of our ebo array.
