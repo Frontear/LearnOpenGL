@@ -2,11 +2,14 @@
 #define GLFW_DLL
 #endif
 
+#include <cmath>
+#include <chrono>
 #include <iostream>
 #include <GL/glew.h> // must come before so it can setup the GL headers for GLFW
 #include <GLFW/glfw3.h>
 
 void processInput(GLFWwindow* window);
+void rainbow_hsb(float hue, float color[3]);
 
 int main() {
     glfwInit();
@@ -73,25 +76,11 @@ int main() {
     // fragment shaders only have 1 output variable, the color, which is a vec4 of rgba. i wonder why we dont do out vec4 gl_Position in the vertex shader. I think its because gl_Position is already defined, whereas here we need to tell opengl we are giving an vec4 out, which opengl will always treat as a color.
     const char* fshader = R"(
         #version 330 core
-        layout(origin_upper_left) in vec4 gl_FragCoord;
+        uniform vec3 rgb;
         out vec4 color;
 
         void main() {
-            float pink_r = 255 / 255.0f;
-            float pink_g = 192 / 255.0f;
-            float pink_b = 203 / 255.0f;
-
-            float blue_r = 65 / 255.0f;
-            float blue_g = 105 / 255.0f;
-            float blue_b = 255 / 255.0f;
-
-            // lerping here to get gradient fill across shape
-            // 800 from window size
-            float r = pink_r - (pink_r - blue_r) * gl_FragCoord.x / 800.0f;
-            float g = pink_g - (pink_g - blue_g) * gl_FragCoord.x / 800.0f;
-            float b = pink_b - (pink_b - blue_b) * gl_FragCoord.x / 800.0f;
-
-            color = vec4(0.25 + r, g, b, 1.0);
+            color = vec4(rgb[0], rgb[1], rgb[2], 1.0);
         }
     )";
     unsigned int fso;
@@ -185,6 +174,16 @@ int main() {
 
         glUseProgram(sp); // now we tell opengl we want to use that specific program and the associated shaders. this can be set inside the loop as well, we dont need to do that since we only have one shader program
 
+        auto elapsed = std::chrono::system_clock::now().time_since_epoch();
+        auto milli = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+
+        float color[3];
+        rainbow_hsb((milli % 7500) / 7500.0f, color);
+
+        unsigned int rgb;
+        rgb = glGetUniformLocation(sp, "rgb");
+        glUniform3fv(rgb, 1, color);
+
         glBindVertexArray(vao); // bind to our VAO and restore the attrib pointer data and vbo associated with it
         //glDrawArrays(GL_TRIANGLES, 0, 3); // telling GL here we want to render a TRIANGLE, 0 is the starting index of our vertices, and 3 is saying how many vertices we want to draw. obviously we want to draw all 3 of our vertices
 
@@ -222,4 +221,56 @@ void processInput(GLFWwindow* window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);
     }
+}
+
+// http://www.docjar.com/html/api/java/awt/Color.java.html
+void rainbow_hsb(float hue, float color[3]) {
+    int r = 0, g = 0, b = 0;
+    float saturation = 0.8, brightness = 0.8;
+
+    if (saturation == 0) {
+        r = g = b = (int) (brightness * 255.0f + 0.5f);
+    } else {
+        float h = (hue - (float) floor(hue)) * 6.0f;
+        float f = h - (float) floor(h);
+        float p = brightness * (1.0f - saturation);
+        float q = brightness * (1.0f - saturation * f);
+        float t = brightness * (1.0f - (saturation * (1.0f - f)));
+        switch ((int) h) {
+        case 0:
+            r = (int) (brightness * 255.0f + 0.5f);
+            g = (int) (t * 255.0f + 0.5f);
+            b = (int) (p * 255.0f + 0.5f);
+            break;
+        case 1:
+            r = (int) (q * 255.0f + 0.5f);
+            g = (int) (brightness * 255.0f + 0.5f);
+            b = (int) (p * 255.0f + 0.5f);
+            break;
+        case 2:
+            r = (int) (p * 255.0f + 0.5f);
+            g = (int) (brightness * 255.0f + 0.5f);
+            b = (int) (t * 255.0f + 0.5f);
+            break;
+        case 3:
+            r = (int) (p * 255.0f + 0.5f);
+            g = (int) (q * 255.0f + 0.5f);
+            b = (int) (brightness * 255.0f + 0.5f);
+            break;
+        case 4:
+            r = (int) (t * 255.0f + 0.5f);
+            g = (int) (p * 255.0f + 0.5f);
+            b = (int) (brightness * 255.0f + 0.5f);
+            break;
+        case 5:
+            r = (int) (brightness * 255.0f + 0.5f);
+            g = (int) (p * 255.0f + 0.5f);
+            b = (int) (q * 255.0f + 0.5f);
+            break;
+        }
+    }
+
+    color[0] = r / 255.0f;
+    color[1] = g / 255.0f;
+    color[2] = b / 255.0f;
 }
