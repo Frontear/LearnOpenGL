@@ -1,3 +1,7 @@
+#ifdef _WIN32
+#define GLFW_DLL
+#endif
+
 #include <iostream>
 #include <GL/glew.h> // must come before so it can setup the GL headers for GLFW
 #include <GLFW/glfw3.h>
