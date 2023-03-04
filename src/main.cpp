@@ -49,10 +49,9 @@ int main() {
     const char* vshader = R"(
         #version 330 core
         layout (location = 0) in vec2 pos;
-        uniform vec2 mouse;
 
         void main() {
-            gl_Position = vec4(pos.x + mouse.x, pos.y - mouse.y, 0.0, 1.0); // mouse movements here aren't perfectly 1:1, because this shader is run per vertex, so logically all vertex's are being affected by mouse.x, not just the top left like I expected at first
+            gl_Position = vec4(pos.x, pos.y, 0.0, 1.0);
         }
     )";
     unsigned int vso;
@@ -140,16 +139,16 @@ int main() {
 
     // vertices for a square, we will define how it should be handled via the EBO
     float vertices[] = {
-        -1.0,   1.0,
-         0.0,   1.0,
-        -1.0,   0.0,
-         0.0,   0.0,
+        -0.5,    0.5, // top left
+         0.5,    0.5, // top right
+        -0.5,   -0.5, // bottom left
+         0.5,   -0.5, // bottom right
     };
 
     unsigned int vbo; // a vbo is an object that just contains vertex data, so the coords above, can then be saved to the vbo and saved into the GPU
     glGenBuffers(1, &vbo); // this is just generating a buffer. GL doesn't know this is a VBO yet, only that this is some type of buffer. also this isn't actually allocating buffer memory yet, but rather just giving the buffer an ID, i think. That's why we can put a sizeof(vertices) later since we need to know the size to allocate for the buffer later, and not now. also would explain why the type of a vbo is just an unsigned int :p
     glBindBuffer(GL_ARRAY_BUFFER, vbo); // so apparently GL_ARRAY_BUFFER means vertex buffer, i guess because vertices are stored as float arrays, like i did earlier? so now GL knows this is a vertex buffer object specifically. that being said, it means that our currently set VBO is the vbo i generated earlier. we can still manage other buffers, just as long as they are NOT GL_ARRAY_BUFFER, or vertex buffer objects, since we would then need to rebind it to that vbo instead.
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); // fairly trivial, we are setting that previously bound VBO to now actually have our vertex data. the last bit, GL_STATIC_DRAW, supposedly means that the data gets set once, and is used many times. This is correct for our use case. there's also GL_DYNAMIC_DRAW, which both changes a lot and draws a lot, and GL_STREAM_DRAW, which is set once and used a few times, not too much. This specific value helps the GPU know how the data should be managed. If its STATIC or DYNAMIC i imagine GPUs give it more priority since its an important rendering component. of course, this is implementation specific.
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_DYNAMIC_DRAW); // fairly trivial, we are setting that previously bound VBO to now actually have our vertex data. the last bit, GL_STATIC_DRAW, supposedly means that the data gets set once, and is used many times. This is correct for our use case. there's also GL_DYNAMIC_DRAW, which both changes a lot and draws a lot, and GL_STREAM_DRAW, which is set once and used a few times, not too much. This specific value helps the GPU know how the data should be managed. If its STATIC or DYNAMIC i imagine GPUs give it more priority since its an important rendering component. of course, this is implementation specific.
 
     // visualized this on desmos, but the idea is that we draw triangles using our coords. supposedly, opengl usually works best with triangles. wonder how we render complex shapes like scribbles as triangles. oh well :p
     unsigned int indices[] = {
@@ -186,24 +185,28 @@ int main() {
 
         glUseProgram(sp); // now we tell opengl we want to use that specific program and the associated shaders. this can be set inside the loop as well, we dont need to do that since we only have one shader program
 
-        unsigned int mouse;
-        mouse = glGetUniformLocation(sp, "mouse");
-
-        // processing of coords
-        double pos[2];
-        int size[2];
-        glfwGetCursorPos(window, &pos[0], &pos[1]);
-        glfwGetWindowSize(window, &size[0], &size[1]);
-
-        float mousePos[] = {
-            // normalizing
-            pos[0] / size[0],
-            pos[1] / size[1]
-        };
-        glUniform2fv(mouse, 1, mousePos);
-
         glBindVertexArray(vao); // bind to our VAO and restore the attrib pointer data and vbo associated with it
         //glDrawArrays(GL_TRIANGLES, 0, 3); // telling GL here we want to render a TRIANGLE, 0 is the starting index of our vertices, and 3 is saying how many vertices we want to draw. obviously we want to draw all 3 of our vertices
+
+        //glBindBuffer(vbo, GL_ARRAY_BUFFER); // this shouldn't be necessary
+        int width, height;
+        double x, y;
+        glfwGetWindowSize(window, &width, &height);
+        glfwGetCursorPos(window, &x, &y);
+
+        // mxy -> wxy
+        // 0.0 -> -1, 0.5 -> 0.0, 1.0 -> 1.0, lerp function
+        float nx = x / width, ny = y / height;
+        float lnx = -1 + (1 - -1) * nx, lny = (-1 + (1 - -1) * ny) * -1; // y is taken top -> bottom
+
+        float pos[] = {
+            lnx,        lny, // top left
+            lnx + 1.0,  lny, // top right
+            lnx,        lny - 1.0, // bottom left
+            lnx + 1.0,  lny - 1.0, // bottom right
+        };
+        glBufferData(GL_ARRAY_BUFFER, sizeof(pos), pos, GL_DYNAMIC_DRAW); // ? idk man lol, should i be changing the vertices objects or re-writing buffer data
+
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // we tell GL we are rendering from an EBO, 6 is our coordinates, GL_UNSIGNED_INT is the data type, and 0 is the start index of our ebo array.
 
         glfwSwapBuffers(window); // a buffer is a large 2d collection of sorts that contains color data for each pixel on the window. ive no clue why the swap though
