@@ -76,11 +76,11 @@ int main() {
     // fragment shaders only have 1 output variable, the color, which is a vec4 of rgba. i wonder why we dont do out vec4 gl_Position in the vertex shader. I think its because gl_Position is already defined, whereas here we need to tell opengl we are giving an vec4 out, which opengl will always treat as a color.
     const char* fshader = R"(
         #version 330 core
-        uniform vec3 rgb;
-        out vec4 color;
+        uniform vec3 color;
 
         void main() {
-            color = vec4(rgb[0], rgb[1], rgb[2], 1.0);
+            gl_FragColor.rgb = color;
+            gl_FragColor.a = 1;
         }
     )";
     unsigned int fso;
@@ -181,7 +181,7 @@ int main() {
         rainbow_hsb((milli % 7500) / 7500.0f, color);
 
         unsigned int rgb;
-        rgb = glGetUniformLocation(sp, "rgb");
+        rgb = glGetUniformLocation(sp, "color");
         glUniform3fv(rgb, 1, color);
 
         glBindVertexArray(vao); // bind to our VAO and restore the attrib pointer data and vbo associated with it
