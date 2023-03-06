@@ -199,10 +199,10 @@ int main() {
         float lnx = -1 + (1 - -1) * nx, lny = (-1 + (1 - -1) * ny) * -1; // y is taken top -> bottom
 
         float pos[] = {
-            lnx,        lny, // top left
-            lnx + 1.0,  lny, // top right
-            lnx,        lny - 1.0, // bottom left
-            lnx + 1.0,  lny - 1.0, // bottom right
+            lnx,         lny, // top left
+            lnx + 1.0f,  lny, // top right
+            lnx,         lny - 1.0f, // bottom left
+            lnx + 1.0f,  lny - 1.0f, // bottom right
         };
         glBufferData(GL_ARRAY_BUFFER, sizeof(pos), pos, GL_DYNAMIC_DRAW); // ? idk man lol, should i be changing the vertices objects or re-writing buffer data
 
