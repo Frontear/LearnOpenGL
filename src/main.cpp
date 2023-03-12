@@ -6,7 +6,10 @@
 #include <chrono>
 #include <iostream>
 #include <GL/glew.h> // must come before so it can setup the GL headers for GLFW
+#include <glm/glm.hpp>
 #include <GLFW/glfw3.h>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 void processInput(GLFWwindow* window);
 void rainbow_hsb(float hue, float color[3]);
@@ -56,8 +59,10 @@ int main() {
 
         out vec4 FragColor;
 
+        uniform mat4 matrix;
+
         void main() {
-            gl_Position = vec4(pos.x, pos.y, 0.0, 1.0);
+            gl_Position = matrix * vec4(pos.x, pos.y, 0.0, 1.0);
             FragColor = vec4(color, 1.0);
         }
     )";
@@ -186,6 +191,16 @@ int main() {
 
         glUseProgram(sp); // now we tell opengl we want to use that specific program and the associated shaders. this can be set inside the loop as well, we dont need to do that since we only have one shader program
 
+        // the identity matrix, a matrix that performs no transformations and leaves inputs of xyz as is.
+        glm::mat4 identity(1.0f);
+        identity = glm::translate(identity, glm::vec3(0.4f));
+        identity = glm::rotate(identity, (float) glfwGetTime(), glm::vec3(0.0, 0.0, 1.0));
+        identity = glm::scale(identity, glm::vec3(0.5f));
+
+        unsigned int matrix;
+        matrix = glGetUniformLocation(sp, "matrix");
+        glUniformMatrix4fv(matrix, 1, GL_FALSE, glm::value_ptr(identity));
+
         /*
         auto elapsed = std::chrono::system_clock::now().time_since_epoch();
         auto milli = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
@@ -225,6 +240,15 @@ int main() {
         */
 
         glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // we tell GL we are rendering from an EBO, 6 is our coordinates, GL_UNSIGNED_INT is the data type, and 0 is the start index of our ebo array.
+
+        glm::mat4 transform(1.0f);
+        transform = glm::translate(transform, glm::vec3(-0.4f));
+        transform = glm::rotate(transform, (float) glfwGetTime(), glm::vec3(0.0, 0.0, 1.0));
+        transform = glm::scale(transform, glm::vec3(0.5f));
+
+        glUniformMatrix4fv(matrix, 1, GL_FALSE, glm::value_ptr(transform));
+
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window); // a buffer is a large 2d collection of sorts that contains color data for each pixel on the window. ive no clue why the swap though
         glfwPollEvents(); // input events, mouse events, click events, drag events, resize events ETC ETC
