@@ -6,6 +6,8 @@
 #include <iostream>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 int main() {
     glfwSetErrorCallback([](int error, const char* desc) {
@@ -99,6 +101,7 @@ int main() {
                     -0.5f, -0.5f,   0.0f, 1.0f, 0.0f,
                     +0.5f, -0.5f,   0.0f, 0.0f, 1.0f,
                 };
+                buffer_data[1] = -0.5f + glm::sqrt((1 + -0.5f - 0.0f) * (1 - -0.5 + 0.0f)); // distance formula re-arrangement to make an equilateral triangle
 
                 GLuint index_data[] = {
                     0, 1, 2
@@ -116,11 +119,18 @@ int main() {
                 glBindBuffer(GL_ARRAY_BUFFER, 0);
                 glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
+                GLint location = glGetUniformLocation(shader_program, "matrix");
+
+                glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
                 while (glfwWindowShouldClose(window) != GLFW_TRUE) {
-                    glClearColor(0.05f, 0.17f, 0.13f, 1.0);
                     glClear(GL_COLOR_BUFFER_BIT);
 
                     glUseProgram(shader_program);
+
+                    glm::mat4 matrix(1.0f);
+                    matrix = glm::rotate(matrix, (float) glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+
+                    glUniformMatrix4fv(location, 1, GL_FALSE, glm::value_ptr(matrix));
 
                     glBindVertexArray(VAO);
                     glDrawElements(GL_TRIANGLES, sizeof(index_data) / sizeof(GLuint), GL_UNSIGNED_INT, nullptr);
