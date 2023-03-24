@@ -93,9 +93,9 @@ int main() {
                 // coordinates are specified in default "front-facing" order, counter clockwise
                 GLfloat buffer_data[] = {
                     // xy coords    // colors
-                    +0.0f, +0.5f,   1.0f, 1.0f, 1.0f,
-                    -0.5f, -0.5f,   1.0f, 1.0f, 1.0f,
-                    +0.5f, -0.5f,   1.0f, 1.0f, 1.0f,
+                    +0.0f, +0.5f,   1.0f, 0.0f, 0.0f,
+                    -0.5f, -0.5f,   0.0f, 1.0f, 0.0f,
+                    +0.5f, -0.5f,   0.0f, 0.0f, 1.0f,
                 };
 
                 GLuint index_data[] = {
@@ -121,7 +121,7 @@ int main() {
                     glUseProgram(shader_program);
 
                     glBindVertexArray(VAO);
-                    glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, nullptr);
+                    glDrawElements(GL_TRIANGLES, sizeof(index_data) / sizeof(GLuint), GL_UNSIGNED_INT, nullptr);
 
                     glfwSwapBuffers(window);
                     glfwPollEvents();
