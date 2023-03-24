@@ -1,5 +1,8 @@
 #define GLFW_INCLUDE_NONE // prevents GLFW from linking OpenGL headers, we use GLEW for this
 
+#include <string>
+#include <fstream>
+#include <sstream>
 #include <iostream>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -24,31 +27,30 @@ int main() {
                 glfwGetFramebufferSize(window, &width, &height);
                 glViewport(0, 0, width, height);
 
-                const GLchar* vshader = R"glsl(
-                    #version 460 core
+                std::string vcontents;
+                std::string fcontents;
 
-                    layout (location = 0) in vec2 xy;
-                    layout (location = 1) in vec3 rgb;
+                std::ifstream vertex("assets/default.vert");
+                std::ifstream fragment("assets/default.frag");
 
-                    out vec3 v_color;
+                if (vertex) {
+                    std::stringstream contents;
+                    contents << vertex.rdbuf();
 
-                    void main() {
-                        gl_Position = vec4(xy, 1.0, 1.0);
-                        v_color = vec3(rgb);
-                    }
-                )glsl";
+                    vertex.close();
+                    vcontents = contents.str();
+                }
 
-                const GLchar* fshader = R"glsl(
-                    #version 460 core
+                if (fragment) {
+                    std::stringstream contents;
+                    contents << fragment.rdbuf();
 
-                    in vec3 v_color;
+                    fragment.close();
+                    fcontents = contents.str();
+                }
 
-                    out vec4 FragColor;
-
-                    void main() {
-                        FragColor = vec4(v_color, 1.0);
-                    }
-                )glsl";
+                const GLchar* vshader = vcontents.c_str();
+                const GLchar* fshader = fcontents.c_str();
 
                 GLint status;
                 GLchar report[1024];
