@@ -73,7 +73,9 @@ int main() {
                     { { +w, +h },       { 100 / 255.0f, 224 / 255.0f, 100 / 255.0f } },
                 };
 
-                VAO.buffer(GL_ARRAY_BUFFER, buffer_data, GL_STATIC_DRAW);
+                VAO.vert_buffer(4, buffer_data, GL_STATIC_DRAW);
+                VAO.attrib(0, 2, (void*) offsetof(vert_buff, xy));
+                VAO.attrib(1, 3, (void*) offsetof(vert_buff, rgb));
 
                 // counter clockwise
                 GLuint index_data[] = {
@@ -81,10 +83,7 @@ int main() {
                     0, 2, 3
                 };
 
-                VAO.buffer(GL_ELEMENT_ARRAY_BUFFER, index_data, GL_STATIC_DRAW);
-
-                VAO.attrib(0, 2, sizeof(buffer_data) / 4, (void*) offsetof(vert_buff, xy));
-                VAO.attrib(1, 3, sizeof(buffer_data) / 4, (void*) offsetof(vert_buff, rgb));
+                VAO.elem_buffer(index_data, GL_STATIC_DRAW);
 
                 // -- END VAO VBO EBO
 
