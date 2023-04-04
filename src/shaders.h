@@ -20,7 +20,7 @@ namespace frontear {
         }
 
         ~shaders() {
-            for (auto s : shdrs) {
+            for (const auto &s : shdrs) {
                 glDeleteShader(s);
             }
 
@@ -31,6 +31,8 @@ namespace frontear {
         }
 
         void attach(GLenum type, const char* filename) {
+            assert(type == GL_VERTEX_SHADER || type == GL_FRAGMENT_SHADER), "Invalid shader type specified";
+
             std::ifstream file(filename, std::ios::in);
             std::ostringstream data;
             file >> data.rdbuf();

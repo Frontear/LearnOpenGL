@@ -8,8 +8,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-#include "buffer.h"
 #include "shaders.h"
+#include "vert_array.h"
 
 int main() {
     glfwSetErrorCallback([](int err, const char* msg) {
@@ -75,9 +75,11 @@ int main() {
                 // -- END SHADER
                 // -- VAO VBO EBO
 
-                GLuint VAO[1];
-                glGenVertexArrays(sizeof(VAO) / sizeof(GLuint), VAO);
-                glBindVertexArray(VAO[0]);
+                frontear::vert_array VAO;
+
+                //GLuint VAO[1];
+                //glGenVertexArrays(sizeof(VAO) / sizeof(GLuint), VAO);
+                //glBindVertexArray(VAO[0]);
 
                 GLfloat w = 400 / (float) width;
                 GLfloat h = 400 / (float) height;
@@ -100,8 +102,7 @@ int main() {
                 //glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
                 //glBufferData(GL_ARRAY_BUFFER, sizeof(buffer_data), buffer_data, GL_STATIC_DRAW);
 
-                frontear::buffer VBO(GL_ARRAY_BUFFER);
-                VBO.upload(buffer_data, GL_STATIC_DRAW);
+                VAO.buffer(GL_ARRAY_BUFFER, buffer_data, GL_STATIC_DRAW);
 
                 // counter clockwise
                 GLuint index_data[] = {
@@ -114,18 +115,20 @@ int main() {
                 //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO[0]);
                 //glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(index_data), index_data, GL_STATIC_DRAW);
 
-                frontear::buffer EBO(GL_ELEMENT_ARRAY_BUFFER);
-                EBO.upload(index_data, GL_STATIC_DRAW);
+                VAO.buffer(GL_ELEMENT_ARRAY_BUFFER, index_data, GL_STATIC_DRAW);
 
-                glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(buffer_data) / 4, (void*) offsetof(vert_buff, xy));
-                glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(buffer_data) / 4, (void*) offsetof(vert_buff, rgb));
+                //glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(buffer_data) / 4, (void*) offsetof(vert_buff, xy));
+                //glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(buffer_data) / 4, (void*) offsetof(vert_buff, rgb));
 
-                glEnableVertexAttribArray(0);
-                glEnableVertexAttribArray(1);
+                //glEnableVertexAttribArray(0);
+                //glEnableVertexAttribArray(1);
 
-                glBindVertexArray(0);
-                glBindBuffer(GL_ARRAY_BUFFER, 0);
-                glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+                VAO.attrib(0, 2, sizeof(buffer_data) / 4, (void*) offsetof(vert_buff, xy));
+                VAO.attrib(1, 3, sizeof(buffer_data) / 4, (void*) offsetof(vert_buff, rgb));
+
+                //glBindVertexArray(0);
+                //glBindBuffer(GL_ARRAY_BUFFER, 0);
+                //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
                 // -- END VAO VBO EBO
 
@@ -143,7 +146,7 @@ int main() {
 
                     //glUniformMatrix4fv(matrix_loc, 1, false, glm::value_ptr(identity)); // the rotation is FUCKED LMAO
 
-                    glBindVertexArray(VAO[0]);
+                    VAO.use();
                     glDrawElements(GL_TRIANGLES, sizeof(index_data) / sizeof(GLuint), GL_UNSIGNED_INT, nullptr);
 
                     glfwSwapBuffers(window);
@@ -154,7 +157,7 @@ int main() {
                 //glDeleteShader(frag_shader);
                 //glDeleteProgram(shader_program);
 
-                glDeleteVertexArrays(sizeof(VAO) / sizeof(GLuint), VAO);
+                //glDeleteVertexArrays(sizeof(VAO) / sizeof(GLuint), VAO);
                 //glDeleteBuffers(sizeof(VBO) / sizeof(GLuint), VBO);
                 //glDeleteBuffers(sizeof(EBO) / sizeof(GLuint), EBO);
             }
