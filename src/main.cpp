@@ -45,27 +45,6 @@ int main() {
                 //glViewport(0, 0, width, height);
 
                 // -- SHADER
-                /*
-                std::string vert_shader_str = read_file("assets/default.vert");
-                std::string frag_shader_str = read_file("assets/default.frag");
-
-                const GLchar* vert_shader_data = vert_shader_str.c_str();
-                const GLchar* frag_shader_data = frag_shader_str.c_str();
-
-                GLuint vert_shader = glCreateShader(GL_VERTEX_SHADER);
-                GLuint frag_shader = glCreateShader(GL_FRAGMENT_SHADER);
-
-                glShaderSource(vert_shader, 1, &vert_shader_data, nullptr);
-                glShaderSource(frag_shader, 1, &frag_shader_data, nullptr);
-
-                glCompileShader(vert_shader);
-                glCompileShader(frag_shader);
-
-                GLuint shader_program = glCreateProgram();
-                glAttachShader(shader_program, vert_shader.ID);
-                glAttachShader(shader_program, frag_shader.ID);
-                glLinkProgram(shader_program);
-                */
 
                 frontear::shaders shaders;
                 shaders.attach(GL_VERTEX_SHADER, "assets/default.vert");
@@ -76,10 +55,7 @@ int main() {
                 // -- VAO VBO EBO
 
                 frontear::vert_array VAO;
-
-                //GLuint VAO[1];
-                //glGenVertexArrays(sizeof(VAO) / sizeof(GLuint), VAO);
-                //glBindVertexArray(VAO[0]);
+                VAO.use();
 
                 GLfloat w = 400 / (float) width;
                 GLfloat h = 400 / (float) height;
@@ -97,11 +73,6 @@ int main() {
                     { { +w, +h },       { 100 / 255.0f, 224 / 255.0f, 100 / 255.0f } },
                 };
 
-                //GLuint VBO[1];
-                //glGenBuffers(sizeof(VBO) / sizeof(GLuint), VBO);
-                //glBindBuffer(GL_ARRAY_BUFFER, VBO[0]);
-                //glBufferData(GL_ARRAY_BUFFER, sizeof(buffer_data), buffer_data, GL_STATIC_DRAW);
-
                 VAO.buffer(GL_ARRAY_BUFFER, buffer_data, GL_STATIC_DRAW);
 
                 // counter clockwise
@@ -110,25 +81,10 @@ int main() {
                     0, 2, 3
                 };
 
-                //GLuint EBO[1];
-                //glGenBuffers(sizeof(EBO) / sizeof(GLuint), EBO);
-                //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO[0]);
-                //glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(index_data), index_data, GL_STATIC_DRAW);
-
                 VAO.buffer(GL_ELEMENT_ARRAY_BUFFER, index_data, GL_STATIC_DRAW);
-
-                //glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(buffer_data) / 4, (void*) offsetof(vert_buff, xy));
-                //glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(buffer_data) / 4, (void*) offsetof(vert_buff, rgb));
-
-                //glEnableVertexAttribArray(0);
-                //glEnableVertexAttribArray(1);
 
                 VAO.attrib(0, 2, sizeof(buffer_data) / 4, (void*) offsetof(vert_buff, xy));
                 VAO.attrib(1, 3, sizeof(buffer_data) / 4, (void*) offsetof(vert_buff, rgb));
-
-                //glBindVertexArray(0);
-                //glBindBuffer(GL_ARRAY_BUFFER, 0);
-                //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 
                 // -- END VAO VBO EBO
 
@@ -152,14 +108,6 @@ int main() {
                     glfwSwapBuffers(window);
                     glfwPollEvents();
                 }
-
-                //glDeleteShader(vert_shader);
-                //glDeleteShader(frag_shader);
-                //glDeleteProgram(shader_program);
-
-                //glDeleteVertexArrays(sizeof(VAO) / sizeof(GLuint), VAO);
-                //glDeleteBuffers(sizeof(VBO) / sizeof(GLuint), VBO);
-                //glDeleteBuffers(sizeof(EBO) / sizeof(GLuint), EBO);
             }
 
             glfwDestroyWindow(window);

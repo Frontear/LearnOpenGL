@@ -26,7 +26,6 @@ namespace frontear {
 
             shdrs.clear();
 
-            glUseProgram(0);
             glDeleteProgram(program);
         }
 
