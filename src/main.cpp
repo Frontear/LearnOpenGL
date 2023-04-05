@@ -1,121 +1,141 @@
-#define GLFW_INCLUDE_NONE // Disable inclusion of GL headers, we use GLEW
+#define GLFW_INCLUDE_NONE
 
+#include <string>
 #include <cstddef>
+#include <fstream>
+#include <sstream>
 #include <iostream>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
-#include <glm/glm.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-
-#include "shaders.h"
-#include "vert_array.h"
 
 int main() {
-    glfwSetErrorCallback([](int err, const char* msg) {
-        std::cerr << "GLFW Error (code " << err << "): " << msg << std::endl;
-    });
+    // INITIALIZE
 
-    if (glfwInit()) {
-        std::cout << "Running GLFW " << glfwGetVersionString() << std::endl;
+    glfwInit();
 
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        glfwWindowHint(GLFW_SAMPLES, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-        GLFWwindow* window = glfwCreateWindow(854, 480, "LearnOpenGL", nullptr, nullptr);
-        if (window != nullptr) {
-            glfwSetKeyCallback(window, [](GLFWwindow* window, int key, int, int action, int) {
-                if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
-                    glfwSetWindowShouldClose(window, true);
-                }
-            });
+    glfwWindowHint(GLFW_SAMPLES, 4);
+    glfwWindowHint(GLFW_RESIZABLE, false);
 
-            glfwMakeContextCurrent(window);
+    GLFWwindow* window = glfwCreateWindow(854, 480, "LearnOpenGL", nullptr, nullptr);
+    glfwMakeContextCurrent(window);
 
-            glfwSetFramebufferSizeCallback(glfwGetCurrentContext(), [](GLFWwindow*, GLsizei width, GLsizei height) {
-                glViewport(0, 0, width, height);
-            });
+    glewExperimental = true;
+    glewInit();
 
-            glewExperimental = true;
-            if (glewInit() == GLEW_OK) {
-                GLsizei width, height;
-                glfwGetFramebufferSize(glfwGetCurrentContext(), &width, &height);
-                //glViewport(0, 0, width, height);
+    GLsizei width, height;
+    glfwGetFramebufferSize(window, &width, &height);
+    glViewport(0, 0, width, height);
 
-                // -- SHADER
+    // SHADERS
+    std::ifstream vert_file("assets/default.vert");
+    std::ifstream frag_file("assets/default.frag");
 
-                frontear::shaders shaders;
-                shaders.attach(GL_VERTEX_SHADER, "assets/default.vert");
-                shaders.attach(GL_FRAGMENT_SHADER, "assets/default.frag");
-                shaders.finalize();
+    std::ostringstream vert_strm;
+    std::ostringstream frag_strm;
 
-                // -- END SHADER
-                // -- VAO VBO EBO
+    vert_file >> vert_strm.rdbuf();
+    frag_file >> frag_strm.rdbuf();
 
-                frontear::vert_array VAO;
-                VAO.use();
+    std::string vert_str = vert_strm.str();
+    std::string frag_str = frag_strm.str();
 
-                GLfloat w = 400 / (float) width;
-                GLfloat h = 400 / (float) height;
+    const GLchar* vert_content = vert_str.c_str();
+    const GLchar* frag_content = frag_str.c_str();
 
-                struct vert_buff {
-                    GLfloat xy[2]; // location 0
-                    GLfloat rgb[3]; // location 1
-                };
+    GLuint vert_id;
+    vert_id = glCreateShader(GL_VERTEX_SHADER);
 
-                // counter clockwise
-                vert_buff buffer_data[] = {
-                    { { -w, +h },       { 255 / 255.0f, 202 / 255.0f, 217 / 255.0f } },
-                    { { -w, -h },       { 177 / 255.0f, 155 / 255.0f, 217 / 255.0f } },
-                    { { +w, -h },       { 183 / 255.0f, 209 / 255.0f, 226 / 255.0f } },
-                    { { +w, +h },       { 100 / 255.0f, 224 / 255.0f, 100 / 255.0f } },
-                };
+    GLuint frag_id;
+    frag_id = glCreateShader(GL_FRAGMENT_SHADER);
 
-                VAO.vert_buffer(4, buffer_data, GL_STATIC_DRAW);
-                VAO.attrib(0, 2, (void*) offsetof(vert_buff, xy));
-                VAO.attrib(1, 3, (void*) offsetof(vert_buff, rgb));
+    glShaderSource(vert_id, 1, &vert_content, nullptr);
+    glShaderSource(frag_id, 1, &frag_content, nullptr);
 
-                // counter clockwise
-                GLuint index_data[] = {
-                    0, 1, 2,
-                    0, 2, 3
-                };
+    glCompileShader(vert_id);
+    glCompileShader(frag_id);
 
-                VAO.elem_buffer(index_data, GL_STATIC_DRAW);
+    GLuint program_id;
+    program_id = glCreateProgram();
 
-                // -- END VAO VBO EBO
+    glAttachShader(program_id, vert_id);
+    glAttachShader(program_id, frag_id);
 
-                GLint matrix_loc = shaders.uniformLoc("matrix");
+    glLinkProgram(program_id);
 
-                glfwSwapInterval(1); // vsync
-                glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-                while (!glfwWindowShouldClose(window)) {
-                    glClear(GL_COLOR_BUFFER_BIT);
+    // BUFFERS (ALL COORDS ARE PROCESSED COUNTER-CLOCKWISE)
 
-                    shaders.use();
+    struct vertex {
+        GLfloat xy[2];
+        GLfloat rgb[3];
+    };
 
-                    //glm::mat4 identity(1.0f);
-                    //identity = glm::rotate(identity, (float) glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+    vertex vbo_data[] = {
+        // location 0 vec2 xy   // location 1 vec3 rgb
+        { { -0.5, +0.5 },       { 1.0, 0.5, 0.5 } },
+        { { -0.5, -0.5 },       { 1.0, 1.0, 0.5 } },
+        { { +0.5, -0.5 },       { 0.5, 0.5, 1.0 } },
+        { { +0.5, +0.5 },       { 0.5, 1.0, 0.5 } },
+    };
 
-                    //glUniformMatrix4fv(matrix_loc, 1, false, glm::value_ptr(identity)); // the rotation is FUCKED LMAO
+    GLuint ebo_data[] = {
+        0, 1, 2,
+        0, 2, 3,
+    };
 
-                    VAO.use();
-                    glDrawElements(GL_TRIANGLES, sizeof(index_data) / sizeof(GLuint), GL_UNSIGNED_INT, nullptr);
+    GLuint vbo_id;
+    glCreateBuffers(1, &vbo_id);
 
-                    glfwSwapBuffers(window);
-                    glfwPollEvents();
-                }
-            }
+    GLuint ebo_id;
+    glCreateBuffers(1, &ebo_id);
 
-            glfwDestroyWindow(window);
+    GLuint vao_id;
+    glGenVertexArrays(1, &vao_id);
+
+    glNamedBufferData(vbo_id, sizeof(vbo_data), vbo_data, GL_STATIC_DRAW);
+    glNamedBufferData(ebo_id, sizeof(ebo_data), ebo_data, GL_STATIC_DRAW);
+
+    glBindVertexArray(vao_id); // MUST BIND: https://gamedev.stackexchange.com/a/151565
+    glBindBuffer(GL_ARRAY_BUFFER, vbo_id);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo_id);
+
+    glVertexAttribPointer(0, sizeof(vertex::xy) / sizeof(GLfloat), GL_FLOAT, GL_FALSE, sizeof(vertex), (void*) offsetof(vertex, xy));
+    glVertexAttribPointer(1, sizeof(vertex::rgb) / sizeof(GLfloat), GL_FLOAT, GL_FALSE, sizeof(vertex), (void*) offsetof(vertex, rgb));
+
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+
+    // RENDER LOOP
+
+    glUseProgram(program_id);
+
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+
+    glfwSwapBuffers(window);
+
+    while (!glfwWindowShouldClose(window)) {
+        if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+            glfwSetWindowShouldClose(window, true);
+            break;
         }
 
-        glfwTerminate();
-
-        return 0;
+        glfwPollEvents();
     }
 
-    return -1;
+    // CLEANUP
+
+    glDeleteVertexArrays(1, &vao_id);
+    glDeleteBuffers(1, &ebo_id);
+    glDeleteBuffers(1, &vbo_id);
+
+    glDeleteProgram(program_id);
+    glDeleteShader(frag_id);
+    glDeleteShader(vert_id);
+
+    glfwDestroyWindow(window);
+
+    glfwTerminate();
 }
