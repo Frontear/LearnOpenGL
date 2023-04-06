@@ -112,7 +112,7 @@ int main() {
 
     glUseProgram(program_id);
 
-    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+    glDrawElements(GL_TRIANGLES, sizeof(ebo_data) / sizeof(GLfloat), GL_UNSIGNED_INT, nullptr);
 
     glfwSwapBuffers(window);
 
