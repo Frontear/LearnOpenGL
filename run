@@ -1,0 +1,5 @@
+#!/bin/sh
+
+cmake -B build # rebuild build dir to transfer asset files over
+cmake --build build --target LearnOpenGL # build project into executable
+./build/LearnOpenGL
