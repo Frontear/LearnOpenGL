@@ -1,5 +1,5 @@
-# Created by https://www.toptal.com/developers/gitignore/api/git,cmake,c++,visualstudiocode
-# Edit at https://www.toptal.com/developers/gitignore?templates=git,cmake,c++,visualstudiocode
+# Created by https://www.toptal.com/developers/gitignore/api/cmake,c++,git
+# Edit at https://www.toptal.com/developers/gitignore?templates=cmake,c++,git
 
 ### C++ ###
 # Prerequisites
@@ -47,7 +47,6 @@ install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
 _deps
-build/
 
 ### CMake Patch ###
 # External projects
@@ -68,23 +67,8 @@ build/
 *_LOCAL_*.txt
 *_REMOTE_*.txt
 
-### VisualStudioCode ###
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-!.vscode/*.code-snippets
+# End of https://www.toptal.com/developers/gitignore/api/cmake,c++,git.
 
-# Local History for Visual Studio Code
-.history/
-
-# Built Visual Studio Code Extensions
-*.vsix
-
-### VisualStudioCode Patch ###
-# Ignore all local history of files
-.history
-.ionide
-
-# End of https://www.toptal.com/developers/gitignore/api/git,cmake,c++,visualstudiocode
+build/
+.cache/
+src/.null-ls*
